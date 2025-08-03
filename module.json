@@ -29,9 +29,9 @@
 			"path": "lang/en.json"
 		}
 	],
-	"manifest": "https://github.com/zeel01/TokenHUDArtButton/releases/latest/download/module.json",
-	"url": "https://github.com/zeel01/TokenHUDArtButton",
-	"download": "https://github.com/zeel01/TokenHUDArtButton/releases/latest/download/artbutton.zip",
+	"manifest": "https://raw.githubusercontent.com/Lifthraser/TokenHUDArtButton/master/module.json",
+	"url": "https://github.com/Lifthraser/TokenHUDArtButton",
+	"download": "https://github.com/Lifthraser/TokenHUDArtButton/archive/refs/heads/master.zip",
 	"readme": "https://github.com/zeel01/TokenHUDArtButton/blob/master/readme.md",
 	"bugs": "https://github.com/zeel01/TokenHUDArtButton/issues",
 	"changelog": "https://github.com/zeel01/TokenHUDArtButton/releases",
