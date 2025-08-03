@@ -174,11 +174,11 @@ class ShowArt {
 	 * @return {ImagePopout} The instance of the ImagePopout.
 	 * @memberof ShowArt
 	 */
-	static createImagePopup(image, title) {
-		return new MultiMediaPopout(image, {
-			title, shareable: true,
-		}).render(true);
-	}
+    static createImagePopup(image, title) {
+        return new MultiMediaPopout(image, {
+            window: { title: title || "Image" }
+        }).render(true);
+    }
 	/**
 	 * Retrieves the Actor associated with a given token.
 	 *
@@ -233,22 +233,26 @@ class ShowArt {
 	 * @memberof ShowArt
 	 */
 	static getTokenImages(token, actor) {
-		const mystery = "icons/svg/mystery-man.svg";
-		const synthActor = token.actorData;
+        const mystery = "icons/svg/mystery-man.svg";
 
-		let actorImg = synthActor.img || actor.img;
-		let tokenImg = token.texture.src;
+        // Get image paths, safely
+        const actorImg = actor?.img || mystery;
+        const tokenImg = token.texture?.src || mystery;
 
-		const am = actorImg === mystery;
-		const tm = tokenImg === mystery;
+        // If one is the mystery image and the other isn't, use the better one for both
+        const am = actorImg === mystery;
+        const tm = tokenImg === mystery;
 
-		if (!(am && tm)) {
-			actorImg = am ? tokenImg : actorImg;
-			tokenImg = tm ? actorImg : tokenImg;
-		}
+        let finalActorImg = actorImg;
+        let finalTokenImg = tokenImg;
 
-		return { actor: actorImg, token: tokenImg };
+        if (!(am && tm)) {
+            finalActorImg = am ? tokenImg : actorImg;
+            finalTokenImg = tm ? actorImg : tokenImg;
 	}
+
+	return { actor: finalActorImg, token: finalTokenImg };
+}
 	/**
 	 * Create the HTML elements for the HUD button
 	 * including the Font Awesome icon and tooltop.
@@ -292,7 +296,7 @@ class ShowArt {
 				this.buttonEventHandler(event, images.token, titles.token)
 			);
 
-		html.find("div.left").append(artButton);
+		$(html).find("div.left").append(artButton);
 	}
 	/**
 	 * Adds the button to the Tile HUD,
@@ -314,7 +318,7 @@ class ShowArt {
 					game.i18n.localize("TKNHAB.TileImg")
 				)
 			)
-		html.find("div.left").append(artButton);
+		$(html).find("div.left").append(artButton);
 	}
 }
 
@@ -326,59 +330,60 @@ class ShowArt {
  * @extends {ImagePopout}
  */
 class MultiMediaPopout extends ImagePopout {
-	/**
-	 * Creates an instance of MultiMediaPopout.
-	 *
-	 * @param {string} src
-	 * @param {object} [options={}]
-	 * @memberof MultiMediaPopout
-	 */
-	constructor(src, options = {}) {
-		super(src, options);
+  /**
+   * Creates an instance of MultiMediaPopout.
+   *
+   * @param {string} src
+   * @param {object} [options={}]
+   */
+  constructor(src, options = {}) {
+    // Ensure Foundry v13+ required structure
+    options = foundry.utils.mergeObject({
+      src: src,  // REQUIRED: image path
+      window: {
+        title: options.window?.title || options.title || "Image"
+      },
+      shareable: true,
+      editable: false,
+      template: "modules/token-hud-art-button/media-popout.html"
+    }, options);
 
-		this.video = [".mp4", "webm"].includes(
-			src.slice(-4).toLowerCase()
-		);
+    // Call parent with single options object
+    super(options);
 
-		this.options.template = "modules/token-hud-art-button/media-popout.html";
-	}
+    this.video = [".mp4", ".webm"].includes(src.slice(-4).toLowerCase());
+  }
 
-	/** @override */
-	async getData(options) {
-		let data = await super.getData();
-		data.isVideo = this.video;
-		return data;
-	}
-	/**
-	* Share the displayed image with other connected Users
-	*/
-	shareImage() {
-		game.socket.emit("module.token-hud-art-button", {
-			image: this.object,
-			title: this.options.title,
-			uuid: this.options.uuid
-		});
-	}
+  /** @override */
+  async getData(options) {
+    let data = await super.getData();
+    data.isVideo = this.video;
+    return data;
+  }
 
-	/**
-	 * Handle a received request to display media.
-	 *
-	 * @override
-	 * @param {string} image - The path to the image/media resource.
-	 * @param {string} title - The title for the popout title bar.
-	 * @param {string} uuid
-	 * @return {MultiMediaPopout}
-	 * @private
-	 */
-	static _handleShareMedia({ image, title, uuid } = {}) {
-		return new MultiMediaPopout(image, {
-			title: title,
-			uuid: uuid,
-			shareable: false,
-			editable: false
-		}).render(true);
-	}
+  /** Share the displayed image with other connected Users */
+  shareImage() {
+    game.socket.emit("module.token-hud-art-button", {
+      image: this.options.src,
+      title: this.options.window?.title || "Image",
+      uuid: this.options.uuid
+    });
+  }
+
+  /** Handle a received request to display media */
+  static _handleShareMedia({ image, title, uuid } = {}) {
+    return new MultiMediaPopout(image, {
+      src: image,
+      window: { title: title || "Image" },
+      uuid: uuid,
+      shareable: false,
+      editable: false
+    }).render(true);
+  }
 }
+
+
+
 
 Hooks.once("init", ShowArt.registerBindings.bind(ShowArt));
 
